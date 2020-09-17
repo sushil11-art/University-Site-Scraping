@@ -7,12 +7,13 @@ from lxml import html
 from University.items import UniversityItem
 
 class AucklanduniversitySpider(scrapy.Spider):
-    name = 'AucklandUniversity'
-    allowed_domains = ['www.auckland.ac.nz/']
-    start_urls = ['https://www.auckland.ac.nz/en/study/study-options/find-a-study-option.html?programmeType=bachelors-honours,doctorates,masters,postgraduate-diploma-and-certificates&programmeFaculty=auckland-bioengineering-institute,arts,business,creative-arts-and-industries,education-and-social-work,engineering,law,medical-and-health-sciences,science,liggins-institute&_charset_=UTF-8#list']
+    name='AucklandUniversity'
+    allowed_domains=['www.auckland.ac.nz/']
+    start_urls=['https://www.auckland.ac.nz/en/study/study-options/find-a-study-option.html?programmeType=bachelors-honours,doctorates,masters,postgraduate-diploma-and-certificates&programmeFaculty=auckland-bioengineering-institute,arts,business,creative-arts-and-industries,education-and-social-work,engineering,law,medical-and-health-sciences,science,liggins-institute&_charset_=UTF-8#list']
 
     def parse(self, response):
         study_options=response.xpath('//main[@id="main"]/div/div[@class="container"]/div[@class="row"]/div[@class="col-xs-12"]/div[@class="browse-area"]/ul[@class="browse-area__list"]/li[@class="browse-area__list-items"]/a/@href').extract()
+        # 
         logging.info('Auckland University :Scrapping started :Url {}'.format(response.url))
         # print(study_options)
         for base_url in study_options:
@@ -21,7 +22,7 @@ class AucklanduniversitySpider(scrapy.Spider):
     def parse_program_url(self,response):
         all_programs=response.xpath('//*[@id="main"]/div[2]/div[3]/div/div[1]/div/div/ul/li/a/@href').extract()
         logging.info('Auckland University :Scrapping staretd finding all programs :Url {}'.format(response.url))
-        # print(all_programs)
+        print(len(all_programs))
         for course in all_programs:
             yield scrapy.Request(course,callback=self.parse_course)
 
@@ -204,14 +205,15 @@ class AucklanduniversitySpider(scrapy.Spider):
             converted_day=[str(element) for element in apply_day]
             joined_day=",".join(converted_day)
             item["apply_day"]=joined_day
-         
+            
             # 14 city
             city=response.xpath('//*[@id="main"]/div[1]/div[3]/div[1]/div[1]/div[1]/div[1]/dl[3]/dd[1]/text()').extract_first()
-            find_city=re.sub('[^A-Z a-z\n]+','',city)
-            if find_city:
-                item["city"]=find_city
-            else:
-                item["city"]=""
+            if city:
+                find_city=re.sub('[^A-Z a-z\n]+','',city)
+                if find_city:
+                    item["city"]=find_city
+                else:
+                    item["city"]=""
             # print(city)
 
             # 16  domestic fee 
@@ -360,20 +362,39 @@ class AucklanduniversitySpider(scrapy.Spider):
             
             # 49 other requirements
             other_requirements=response.xpath('//*[@id="area-postgraduate-uoa-qualification-further-programme-requirements"]/div').extract_first()
-            item["other_requirements"]=other_requirements
+            
+            if other_requirements is not None:
+                item["other_requirements"]=other_requirements
+
+            else:
+                item["other_requirements"]=""
             # print(other_requirements)
             # 50 course description
             course_description=response.xpath('//*[@id="main"]/div[2]/div/div[1]/div/div[1]/div/div[2]/p/text()').extract_first()
             # print(course_description)
-            item["course_description"]=course_description
+            if course_description is not None:
+                item["course_description"]=course_description
+
+            else:
+                item["course_description"]=""
 
             # 51 course structure
             course_structure=response.xpath('//*[@id="section1"]/div[1]/div[2]/div/div').extract_first()
-            item["course_structure"]=course_structure
+
+            if course_structure is not None: 
+                item["course_structure"]=course_structure
+            else:
+                item["course_structure"]=""
+
             # print(course_structure)
             # 52
             career=response.xpath('//*[@id="section1"]/div[1]/div[2]/div/div').extract_first()
-            item["career"]=career
+            if career is not None:
+                item["career"]=career
+            
+            else:
+               item["career"]=""
+ 
             # print(career)
             yield item
         except Exception as ex:
